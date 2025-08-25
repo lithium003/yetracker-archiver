@@ -24,7 +24,7 @@ eras = {
     'Yandhi [V2]': ['#A64D79', '#F1EBFF'],
     'JESUS IS KING': ['#182d9c', '#FCDC4D'],
     'God\'s Country': ['#1E1E6C', '#BACCD3'],
-    'JESUS IS KING: The Dr. Dre Version': ['#FCDC4D', '#182d9c'],
+    'JESUS IS KING The Dr. Dre Version': ['#FCDC4D', '#182d9c'],
     'DONDA [V1]': ['#E84125', '#87FF5D'],
     'Donda [V2]': ['#398A96', '#EBDBB7'],
     'Donda [V3]': ['#000000', '#FFFFFF'],
