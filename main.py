@@ -53,7 +53,7 @@ def downloadRegular(url: str, folder: str):
 def downloadEra(eraName, section):
     if eraName in eraNames:
         sectionName = os.path.splitext(os.path.basename(section))[0]
-        folderName = f'{eraName}_{sectionName}'
+        folderName = f'{eraName}_{sectionName}'.replace(':', '-')
         if not os.path.isdir(folderName):
             os.mkdir(folderName)
 
@@ -63,12 +63,12 @@ def downloadEra(eraName, section):
             data, type = tsv.getLine(i, section)
             
             if type == 'era':
-                print(f'New era: {data['Era']}')
+                print(f'New era: {data["Era"]}')
                 if lastEraLine > -1:
                     lastEra, _ = tsv.getLine(lastEraLine, section)
                     
                     if lastEra['Era'] == eraName:
-                        print(f'Downloading era: {lastEra['Era']}')
+                        print(f'Downloading era: {lastEra["Era"]}')
                         for song in songs:
                             for link in song:
                                 if str(link).startswith('https://pillows.su/f/'):
@@ -76,7 +76,7 @@ def downloadEra(eraName, section):
                     songs = []
                 lastEraLine = i
             elif type == 'song':
-                print(f'Indexed entry: {data['Name']}')
+                print(f'Indexed entry: {data["Name"]}')
                 if 'Links' in data.keys():
                     songs.append(data['Links'])
     else:
