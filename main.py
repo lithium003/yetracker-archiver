@@ -53,7 +53,7 @@ def downloadRegular(url: str, folder: str):
 def downloadEra(eraName, section):
     if eraName in eraNames:
         sectionName = os.path.splitext(os.path.basename(section))[0]
-        folderName = f'{eraName}_{sectionName}'
+        folderName = f'{eraName}_{sectionName}'.replace(':', '-')
         if not os.path.isdir(folderName):
             os.mkdir(folderName)
 
