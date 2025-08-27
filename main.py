@@ -10,6 +10,10 @@ import tsv
 from data import eraNames
 from tqdm import tqdm
 
+def sanitize_folder_name(name):
+    # Remove or replace forbidden characters for Windows folders
+    return re.sub(r'[<>:"/\\|?*]', '_', name)
+
 def regularToAPI(rurl: str):
     print('[pillowcase] converting', rurl, 'to api url')
     return 'https://api.pillows.su/api/download/' + rurl.split('/')[-1]
@@ -54,31 +58,20 @@ def downloadEra(eraName, section):
     if eraName in eraNames:
         sectionName = os.path.splitext(os.path.basename(section))[0]
         folderName = f'{eraName}_{sectionName}'.replace(':', '-')
-        folderDir = f'./downloads/{folderName}'
-        os.makedirs(folderDir, exist_ok=True)
-
-        songs = []
-        lastEraLine = -1
+        baseFolderDir = f'./downloads/{folderName}'
+        os.makedirs(baseFolderDir, exist_ok=True)
+        print(f'Finding era {eraName} in section {sectionName} (This may take a while)...')
         for i in range(1, sum(1 for _ in open(section, encoding="utf8"))):
             data, type = tsv.getLine(i, section)
-            
-            if type == 'era':
-                print(f'New era: {data["Era"]}')
-                if lastEraLine > -1:
-                    lastEra, _ = tsv.getLine(lastEraLine, section)
-                    
-                    if lastEra['Era'] == eraName:
-                        print(f'Downloading era: {lastEra["Era"]}')
-                        for song in songs:
-                            for link in song:
-                                if str(link).startswith('https://pillows.su/f/'):
-                                    fn = downloadRegular(link, folderDir)
-                    songs = []
-                lastEraLine = i
-            elif type == 'song':
+            # Only process songs that match the selected era
+            if type == 'song' and data['Era'] == eraName:
                 print(f'Indexed entry: {data["Name"]}')
-                if 'Links' in data.keys():
-                    songs.append(data['Links'])
+                song_name_sanitized = sanitize_folder_name(data['Name'])
+                song_folder = os.path.join(baseFolderDir, song_name_sanitized)
+                os.makedirs(song_folder, exist_ok=True)
+                for link in data['Links']:
+                    if str(link).startswith('https://pillows.su/f/'):
+                        fn = downloadRegular(link, song_folder)
     else:
         print('invalid era given')
                 
