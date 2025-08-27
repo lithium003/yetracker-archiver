@@ -10,18 +10,56 @@ import tsv
 from data import eraNames
 from tqdm import tqdm
 
+"""
+Removes illegal characters from folder names to avoid Windows errors.
+Args:
+    name (str): The folder name to sanitize.
+
+Returns:
+    str: The sanitized folder name.
+"""
 def sanitize_folder_name(name):
     # Remove or replace forbidden characters for Windows folders
-    return re.sub(r'[<>:"/\\|?*]', '_', name)
+    return re.sub(r'[<>:"/\\|?*]', '_', name).strip()
 
+"""
+Converts a regular download URL to a Pillowcase API download URL.
+Args:
+    rurl (str): The regular download URL.
+
+Returns:
+    str: The API download URL.
+"""
 def regularToAPI(rurl: str):
     print('[pillowcase] converting', rurl, 'to api url')
     return 'https://api.pillows.su/api/download/' + rurl.split('/')[-1]
 
+"""
+Handles a url for downloading.
+Args:
+    url (str): The download URL.
+    folder (str): The folder to save the downloaded file.
+"""
 def downloadRegular(url: str, folder: str):
-    print(f'[pillowcase] registering download {url}...')
-    url = regularToAPI(url)
+    # Handle multiple links together
+    split = url.split(' ')
+    if len(split) > 1:
+        print(f'[System] Found multiple links in {url}, registering all...')
+        for link in split:
+            downloadRegular(link, folder)
+        return
 
+    if 'pillows.' in url:
+        # Handle Pillowcase links
+        print(f'[pillowcase] registering download {url}...')
+        url = regularToAPI(url)
+    else:
+        # Handle other links
+        print(f'[Other] Non-pillowcase link at {url}, skipping download, saving link.')
+        with open(f'{folder}/external_links.txt', 'a') as f:
+            f.write(url + '\n')
+        return
+    
     r = requests.get(url, stream=True)
     if r.status_code == 200:
         cd = r.headers.get("content-disposition")
@@ -44,15 +82,15 @@ def downloadRegular(url: str, folder: str):
                 bar.close()
 
                 print(f"[pillowcase] downloaded as: {filename}")
-                return filename
+                return
             except:
                 print('[pillowcase] local download failure - check your internet status if this is concurrent')
-                return 'Unavailable'
+                return
         else:
-            return filename
+            return
     else:
         print("[pillowcase] failed to download, status:", r.status_code)
-        return 'Unavailable'
+        return
 
 def downloadEra(eraName, section):
     if eraName in eraNames:
@@ -70,8 +108,7 @@ def downloadEra(eraName, section):
                 song_folder = os.path.join(baseFolderDir, song_name_sanitized)
                 os.makedirs(song_folder, exist_ok=True)
                 for link in data['Links']:
-                    if str(link).startswith('https://pillows.su/f/'):
-                        fn = downloadRegular(link, song_folder)
+                    downloadRegular(link, song_folder)
     else:
         print('invalid era given')
                 
