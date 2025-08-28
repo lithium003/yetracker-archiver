@@ -18,9 +18,15 @@ Args:
 Returns:
     str: The sanitized folder name.
 """
-def sanitize_folder_name(name):
+def sanitize_folder_name(name: str) -> str:
+    # Truncate name after 50 characters to avoid exceeding the 256-char path limit on save
+    trimmed_name = name[:50]
+    # Prevent folder from ending with a dot
+    if trimmed_name[-1] == '.':
+        trimmed_name = trimmed_name[:-1] + '_'
     # Remove or replace forbidden characters for Windows folders
-    return re.sub(r'[<>:"/\\|?*]', '_', name).strip()
+    sanitized_name = re.sub(r'[<>:"/\\|?*]', '_', trimmed_name).strip()
+    return sanitized_name
 
 """
 Converts a regular download URL to a Pillowcase API download URL.
@@ -85,6 +91,8 @@ def downloadRegular(url: str, folder: str):
                 return
             except:
                 print('[pillowcase] local download failure - check your internet status if this is concurrent')
+                with open(f'{folder}/external_links.txt', 'a') as f:
+                    f.write('DOWNLOAD FAILED: ' + url + '\n')
                 return
         else:
             return
