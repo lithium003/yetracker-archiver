@@ -18,7 +18,7 @@ Args:
 Returns:
     str: The sanitized folder name.
 """
-def sanitize_folder_name(name: str) -> str:
+def sanitize_name(name: str) -> str:
     # Truncate name after 50 characters to avoid exceeding the 256-char path limit on save
     trimmed_name = name[:50]
     # Prevent folder from ending with a dot
@@ -102,18 +102,18 @@ def downloadRegular(url: str, folder: str):
 
 def downloadEra(eraName, section):
     if eraName in eraNames:
-        sectionName = os.path.splitext(os.path.basename(section))[0]
-        folderName = f'{eraName}_{sectionName}'.replace(':', '-')
-        baseFolderDir = f'./downloads/{folderName}'
-        os.makedirs(baseFolderDir, exist_ok=True)
+        sectionName = sanitize_name(os.path.splitext(os.path.basename(section))[0])
+        folderName = sanitize_name(eraName)
+        folderDir = f'./downloads/{sectionName}/{folderName}'
+        os.makedirs(folderDir, exist_ok=True)
         print(f'Finding era {eraName} in section {sectionName} (This may take a while)...')
         for i in range(1, sum(1 for _ in open(section, encoding="utf8"))):
             data, type = tsv.getLine(i, section)
             # Only process songs that match the selected era
             if type == 'song' and data['Era'] == eraName:
                 print(f'Indexed entry: {data["Name"]}')
-                song_name_sanitized = sanitize_folder_name(data['Name'])
-                song_folder = os.path.join(baseFolderDir, song_name_sanitized)
+                song_name_clean = sanitize_name(data['Name'])
+                song_folder = os.path.join(folderDir, song_name_clean)
                 os.makedirs(song_folder, exist_ok=True)
                 for link in data['Links']:
                     downloadRegular(link, song_folder)
@@ -124,5 +124,13 @@ def downloadEra(eraName, section):
 if __name__ == '__main__':
     era, _ = pick.pick(eraNames, 'Select an era to archive:')
     file, _ = pick.pick(glob.glob("tracker-tabs/*.tsv"), 'Pick a section:')
-    downloadEra(era, file)
+    cont, _ = pick.pick(['Yes', 'No'], f'Archive all eras after {era} as well? (This may take a LONG while)')    
+    if cont == 'Yes':
+        cutoff = eraNames.index(era)
+        for era in eraNames:
+            if era in eraNames[:cutoff]:
+                continue
+            downloadEra(era, file)
+    else:
+        downloadEra(era, file)
     print('[main] Finished!')
